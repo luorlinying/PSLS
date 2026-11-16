@@ -58,7 +58,8 @@ python gui_entry.py
 pyinstaller PSLS.spec
 ```
 
-> `PSLS.spec` 来自完整构建，包含私有组件引用；缺少 ML 引擎时请自行删减相关条目。
+> 完整版的 `build.py` 与 `MLWorker.spec` 依赖私有 ML 组件，未包含在本仓库；
+> 开源构建请直接使用 `PSLS.spec`，并按需删减其中的资源条目。
 
 ## 未包含的内容
 
