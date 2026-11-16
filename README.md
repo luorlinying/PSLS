@@ -8,6 +8,14 @@ Project Sertraline Lab Offline Security —— 一套完全离线的 Windows 终
 > 签名库完成。上游完整构建的内部指标（检出率 >80%、误报率 <1%）**不适用于**
 > 本仓库构建，请勿据此评估本项目。
 
+## 发布说明
+
+- **GitHub Releases 提供的是 Rust 版本**（主线实现）的安装包：
+  [下载最新版本](https://github.com/luorlinying/PSLS/releases)。
+- **Python 版本源码继续在本仓库开放**，但不再提供官方安装包；如需运行，请按
+  下方“快速开始”从源码启动。
+- 当前为**早期测试版**，功能和检测结果可能变化，请勿用于关键环境。
+
 ## 功能
 
 | 模块 | 说明 |
