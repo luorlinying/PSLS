@@ -1,0 +1,181 @@
+# -*- coding: utf-8 -*-
+"""
+SConstruct — PSLS 内核驱动 SCons 构建脚本
+
+前置要求:
+  1. Visual Studio 2022 (社区版免费) — C++ 编译器
+  2. Windows Driver Kit 10.0.19041.0 或更新 (WDK)
+     https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk
+  3. SCons (pip install scons)
+
+构建:
+  set WDK_ROOT=C:\Program Files (x86)\Windows Kits\10
+  set VS_PATH=C:\Program Files\Microsoft Visual Studio\2022\Community
+  scons
+
+输出:
+  driver/out/PSLS.sys    (未签名, 开发测试用)
+  签名: signtool sign /fd SHA256 /sha1 <CERT_SHA1> PSLS.sys
+"""
+
+import os
+
+# ---- 环境检测 ----
+def _version_sort_key(v):
+    try:
+        return tuple(int(x) for x in v.split('.'))
+    except Exception:
+        return (0, 0, 0, 0)
+
+def find_wdk():
+    candidates = [
+        os.environ.get('WDK_ROOT', ''),
+        r'C:\Program Files (x86)\Windows Kits\10',
+    ]
+    for p in candidates:
+        if p and os.path.isdir(p):
+            # 找包含 km 头文件的最新 SDK 版本目录
+            versions = []
+            incl_dir = os.path.join(p, 'Include')
+            if os.path.isdir(incl_dir):
+                for d in os.listdir(incl_dir):
+                    if os.path.isdir(os.path.join(incl_dir, d, 'km')):
+                        versions.append(d)
+            if versions:
+                versions.sort(key=_version_sort_key, reverse=True)
+                return p, versions[0]  # (root, latest_sdk_version)
+    return None, None
+
+# ---- 构建 ----
+env = Environment(
+    ENV=os.environ,
+    TARGET_ARCH='x86_64',
+)
+
+env['SITE'] = 'windows'
+
+# WDK 头路径
+wdk_root, sdk_ver = find_wdk()
+if wdk_root:
+    env.Append(CPPPATH=[
+        os.path.join(wdk_root, 'Include', sdk_ver, 'km'),
+        os.path.join(wdk_root, 'Include', sdk_ver, 'shared'),
+        os.path.join(wdk_root, 'Include', sdk_ver, 'ucrt'),
+        os.path.join(wdk_root, 'Include', sdk_ver, 'um'),
+        'include',  # 项目内头
+    ])
+    # WDK 库路径 (minifilter 需要 fltkernel.lib, WFP 需要 fwpkclnt.lib)
+    env.Append(LIBPATH=[
+        os.path.join(wdk_root, 'Lib', sdk_ver, 'km', 'x64'),
+        os.path.join(wdk_root, 'Lib', sdk_ver, 'um', 'x64'),
+    ])
+else:
+    print("⚠ WDK_ROOT 未找到, 请设置环境变量或安装 WDK")
+    exit(1)
+
+# 编译标记 (内核驱动专用)
+env.Append(CPPFLAGS=[
+    '/kernel',                    # 内核模式代码
+    '/W4',                        # 最高警告等级
+    '/WX',                        # 警告即错误
+    '/utf-8',                     # 源码按 UTF-8 解析，消除含中文注释时的 C4819 代码页警告
+    '/O2',                        # 优化
+    '/GL',                        # 全程序优化
+    '/D_CRT_SECURE_NO_WARNINGS',
+    '/DPSLS_DRIVER_BUILD',        # 标记内核驱动编译(共享头内启用驱动类型)
+    '/D_AMD64_',                  # 目标架构: x64
+    '/D_AMD64',
+    '/D_M_AMD64',
+    '/DPSLS_DRIVER_VERSION_MAJOR=1',
+    '/DPSLS_DRIVER_VERSION_MINOR=0',
+    '/DPSLS_DRIVER_VERSION_PATCH=0',
+    '/DNTDDI_VERSION=0x0A000007',  # Windows 10 1809
+    '/D_WIN32_WINNT=0x0A00',
+    '/DWINVER=0x0A00',
+    '/wd4201',                    # nonstandard extension used: nameless struct/union
+    '/wd4214',                    # nonstandard extension used: bit field types other than int
+    '/wd4324',                    # structure was padded due to alignment specifier
+    '/wd4359',                    # code was skipped due to pragma
+    '/wd4505',                    # unreferenced local function has been removed
+    '/wd4510',                    # member function was not instantiated
+    '/wd4511',                    # copy constructor could not be generated
+    '/wd4512',                    # assignment operator could not be generated
+    '/wd4996',                    # deprecated API (ExAllocatePoolWithTag 等)
+    '/wd4090',                    # 不同的 const 限定符 (PUNICODE_STRING 传参)
+])
+
+# 链接器设置
+env.Append(LINKFLAGS=[
+    '/driver',
+    '/kernel',
+    '/NODEFAULTLIB',              # 内核驱动不链接 CRT (避免 LIBCMT 引用 kernel32)
+    '/integritycheck',            # 映像完整性检查
+    '/RELEASE',
+    '/SUBSYSTEM:NATIVE',
+    '/DYNAMICBASE',
+    '/ENTRY:DriverEntry',         # 入口点! 缺失时 PE 头 AddressOfEntryPoint=0,
+                                  # 加载即跳基址+0 执行 PE 头 → 0xFC 蓝屏
+])
+
+# 内核驱动依赖库:
+#   fltMgr.lib                 — minifilter 框架 (FltRegisterFilter 等, 导入库实际名为 fltMgr.lib)
+#   fwpkclnt.lib               — WFP 网络过滤 (FwpmFilterAdd0 等)
+#   ntoskrnl.lib               — 内核运行时
+#   bufferoverflowfastfailk.lib — /GS 栈保护 cookie (__security_check_cookie, 内核版)
+env.Append(LIBS=['fltMgr', 'fwpkclnt', 'ntoskrnl', 'bufferoverflowfastfailk'])
+
+env['SHLIBPREFIX'] = ''
+env['SHLIBSUFFIX'] = '.sys'
+
+# ---- 输出 ----
+VariantDir('out', 'src', duplicate=0)
+
+sources = [
+    'src/psls_driver.c',
+    'src/procmon.c',
+    'src/regmon.c',
+    'src/protect.c',
+    'src/loadmon.c',
+    'src/etwprov.c',   # 驱动自有 ETW Provider (路线 C)
+    'src/filemon.c',   # minifilter 文件写入拦截
+    'src/netmon.c',    # WFP 网络连接拦截
+    'src/diskmon.c',   # 引导扇区(MBR)写入拦截
+]
+
+psls_sys = env.SharedLibrary(target='out/PSLS', source=sources)
+
+# 复制 INF
+env.Command('out/PSLS.inf', 'PSLS.inf', Copy('$SOURCE', '$TARGET'))
+
+Default(psls_sys)
+
+print("""
+═══════════════════════════════════════════════════
+  PSLS Kernel Driver Build Ready
+═══════════════════════════════════════════════════
+
+  Source files:
+    src/psls_driver.c   (DriverEntry + IOCTL + 事件池)
+    src/procmon.c       (进程创建/删除回调, PRE 拦截)
+    src/regmon.c        (注册表 PRE 操作回调)
+    src/protect.c       (PSLS 自身 OB_CALLBACKS 防护)
+    src/loadmon.c       (映像加载回调)
+    src/filemon.c       (minifilter 文件写入拦截 — R0)
+    src/netmon.c        (WFP 网络连接拦截 — R0)
+    include/psls_shared.h  (内核/用户态共享协议)
+
+  Linked libs: fltkernel + fwpkclnt + ntoskrnl
+
+  Output: out/PSLS.sys + out/PSLS.inf
+
+  Next steps:
+    1. Disable driver signature enforcement (test only):
+       bcdedit /set testsigning on && shutdown /r /t 0
+    2. Copy PSLS.sys + PSLS.inf to target machine
+    3. pnputil /add-driver PSLS.inf /install
+       (或: sc create PSLS type= filesys binPath= "C:\\Windows\\System32\\drivers\\PSLS.sys")
+    4. sc start PSLS
+    5. Verify: sc query PSLS  +  fltmc instances  (确认 minifilter 已附加)
+    6. Debug output: WinDbg / kd or DebugView (Sysinternals)
+═══════════════════════════════════════════════════
+""")

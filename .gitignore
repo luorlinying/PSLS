@@ -1,0 +1,71 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Packaging / build output
+build/
+dist/
+*.spec.bak
+*.log
+
+# Runtime and user data
+appdata/
+backup/
+data/
+logs/
+quarantine/
+rollback/
+samples/
+config/*.local.json
+config/notification_settings.local.json
+tests/_pybridge_status.json
+
+# Signature database (generated at runtime)
+db/*.db
+db/*.db-shm
+db/*.db-wal
+db/*.db-journal
+db/*.heal_*
+
+# YARA compiled caches and third-party rule dumps
+rules/yara/*.yc
+rules/yara/*.yc.fp
+rules/yara/elastic/
+
+# Proprietary ML engine and weights
+models/
+engine/brewtotal_sorel/
+ml_worker_entry.py
+MLWorker.spec
+train_sorel_ember.py
+
+# Driver build artifacts
+driver/out/
+driver/**/*.obj
+driver/**/*.sys
+driver/**/*.pdb
+driver/**/*.dblite
+
+# Certificates and secrets
+*.pfx
+*.p12
+*.pw
+*.key
+*.pem
+*.pvk
+*.snk
+
+# Editors / tooling
+.trae/
+.trae-html-share-packages/
+.screenshots/
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini

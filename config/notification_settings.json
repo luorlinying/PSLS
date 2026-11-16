@@ -1,0 +1,12 @@
+{
+  "desktop_enabled": true,
+  "sound_enabled": true,
+  "popup_duration": 2,
+  "threat_popup_duration": 30,
+  "max_history": 200,
+  "throttle_seconds": 1,
+  "show_success": true,
+  "show_info": true,
+  "show_warning": true,
+  "show_threat": true
+}

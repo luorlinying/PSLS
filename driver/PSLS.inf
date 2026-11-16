@@ -1,0 +1,139 @@
+;=============================================================================
+; PSLS Driver INF 安装文件
+; 版本: 1.1.0  (新增 minifilter + WFP 支持)
+; 目标: Windows 10 1803+ / Windows 11 x64
+;
+; 驱动类型: ActivityMonitor (minifilter)
+;   - PSLS.sys 同时承载: IOCTL 设备 + minifilter + WFP callout
+;   - minifilter 需要通过 ActivityMonitor 类安装以获取 altitude
+;   - WFP callout 在运行时通过 FwpsCalloutRegister 注册, 无需 INF 配置
+;
+; 使用方法:
+;   1. 安装 WDK + Visual Studio
+;   2. scons 构建得到 PSLS.sys
+;   3. signtool sign (EV 证书)
+;   4. 管理员 PowerShell:
+;      pnputil /add-driver PSLS.inf /install
+;      sc start PSLS
+;      fltmc instances    (确认 minifilter 已附加到卷)
+;
+; 开发测试: 禁用强制驱动签名 (只在测试机上!)
+;   bcdedit /set testsigning on
+;   bcdedit /set nointegritychecks on
+;=============================================================================
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=ActivityMonitor
+ClassGuid={b86dff51-a31e-4bac-b3cf-e8cfe75c9fc2}
+Provider=%ProviderName%
+DriverVer=08/19/2026,1.1.0.0
+CatalogFile=PSLS.cat
+
+[SourceDisksNames]
+1=%DiskDescription%,,
+
+[SourceDisksFiles]
+PSLS.sys = 1,,
+
+[DestinationDirs]
+DefaultDestDir=12     ; %SystemRoot%\System32\drivers
+
+[Manufacturer]
+%ProviderName%=PSLSDriver,NTamd64
+
+[PSLSDriver.NTamd64]
+%DeviceDesc%=PSLS_Device_Inst,root\PSLS
+
+;=============================================================================
+; 设备实例
+;=============================================================================
+
+[PSLS_Device_Inst.NT]
+CopyFiles=PSLS_CopyFiles
+
+[PSLS_Device_Inst.NT.Services]
+AddService=PSLS,0x00000002,PSLS_Service_Inst
+AddService=FltMgr,,FltMgr_Service_Inst    ; minifilter 依赖 FltMgr 服务
+
+;=============================================================================
+; 文件复制
+;=============================================================================
+
+[PSLS_CopyFiles]
+PSLS.sys
+
+;=============================================================================
+; 服务配置 — minifilter (FILE_SYSTEM_DRIVER)
+;   ServiceType    = 2  (SERVICE_FILE_SYSTEM_DRIVER) — minifilter 必须
+;   StartType      = 2  (SERVICE_AUTO_START)          — 开机自动加载
+;   LoadOrderGroup = "FSFilter Activity Monitor"      — minifilter 加载组
+;=============================================================================
+
+[PSLS_Service_Inst]
+DisplayName    = %SvcDisplayName%
+Description    = %SvcDescription%
+ServiceType    = 2                   ; SERVICE_FILE_SYSTEM_DRIVER (minifilter)
+StartType      = 2                   ; SERVICE_AUTO_START
+ErrorControl   = 1                   ; SERVICE_ERROR_NORMAL
+ImagePath      = \SystemRoot\System32\drivers\PSLS.sys
+LoadOrderGroup = "FSFilter Activity Monitor"
+Dependencies   = FltMgr
+
+;=============================================================================
+; FltMgr 服务 (已存在系统服务, 仅声明依赖, 不实际安装)
+;=============================================================================
+
+[FltMgr_Service_Inst]
+DisplayName    = "Filter Manager"
+ServiceType    = 2
+StartType      = 1                   ; SERVICE_BOOT_START (系统启动时加载)
+ErrorControl   = 1
+ImagePath      = system32\drivers\fltmgr.sys
+
+;=============================================================================
+; minifilter 注册表配置 — altitude 和实例
+;
+; altitude 决定 minifilter 在 I/O 栈中的位置:
+;   370000-389999 = Activity Monitor 区间
+;   PSLS 使用 370110 (活动监控, 靠近栈底, 优先拦截)
+;
+; 注册表结构:
+;   HKLM\SYSTEM\CurrentControlSet\Services\PSLS
+;     \Instances
+;       \PSLS Instance
+;         Altitude = "370110"
+;         Flags    = 0x0  (附加到所有卷)
+;=============================================================================
+
+[PSLS_Device_Inst.NT.HW]
+AddReg=PSLS_Minifilter_AddReg
+
+[PSLS_Minifilter_AddReg]
+; minifilter 实例注册
+HKR,"Instances","DefaultInstance",0x00000000,%DefaultInstance%
+HKR,"Instances\"%DefaultInstance%,"Altitude",0x00000000,%MinifilterAltitude%
+HKR,"Instances\"%DefaultInstance%,"Flags",0x00010001,0x0       ; 附加到所有卷
+
+;=============================================================================
+; 服务卸载 (pnputil remove-driver)
+;=============================================================================
+
+[PSLSDriver.NTamd64.Uninstall]
+DelReg = PSLS_DelReg
+
+[PSLS_DelReg]
+HKLM,System\CurrentControlSet\Services\PSLS
+
+;=============================================================================
+; 字符串
+;=============================================================================
+
+[Strings]
+ProviderName       = "PSLS Security"
+DiskDescription    = "PSLS Kernel Driver Installation"
+DeviceDesc         = "PSLS Security Kernel Driver"
+SvcDisplayName     = "PSLS Security Driver (Protective Service)"
+SvcDescription     = "PSLS kernel-level process / file / network / registry monitoring with R0 interception. Non-protective, defensive use only."
+DefaultInstance    = "PSLS Instance"
+MinifilterAltitude = "370110"

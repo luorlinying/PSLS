@@ -1,0 +1,19 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  syntax:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Byte-compile sources
+        run: >
+          python -m compileall -q
+          engine utils ui db tests scripts driver/bridge
+          gui_entry.py run_sandbox_dev.py build.py

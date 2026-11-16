@@ -1,0 +1,43 @@
+name: Bug report
+description: 报告可复现的问题（请勿附带恶意样本）
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请先确认：问题可在最新提交复现，且不包含真实恶意样本、个人路径或证书材料。
+  - type: input
+    id: version
+    attributes:
+      label: 版本 / 提交
+      placeholder: commit hash 或版本号
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: 环境
+      placeholder: Windows 版本、Python 版本、是否加载驱动
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      placeholder: 1. ... 2. ... 3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际结果与日志
+      description: 请先移除用户名、路径与其他个人信息。
+    validations:
+      required: true
