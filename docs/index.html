@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project Sertraline Lab — Offline Security</title>
-<meta name="description" content="璱鸲计划实验室离线安全软件：完全离线，不收集任何信息；多引擎共同分析；Dantrolene V1 机器学习引擎；实时防护。">
+<meta name="description" content="璱鸲计划实验室离线安全软件：完全离线、多引擎判定与实时防护。Project Sertraline Lab Offline Security — fully offline Windows endpoint security with multi-engine analysis and real-time protection.">
 <style>
 /* ============================================================
    Project Sertraline Lab — Offline Security
@@ -199,6 +199,25 @@ a{ color:inherit; }
   line-height:1.85;
 }
 .hero-lead strong{ color:var(--ink); font-weight:600; }
+.hero-lead-en{
+  margin:14px 0 0;
+  max-width:36em;
+  font-family:var(--serif);
+  font-style:italic;
+  font-size:14px;
+  line-height:1.8;
+  color:var(--ink-faint);
+}
+.en-note{
+  display:block;
+  margin-top:12px;
+  font-family:var(--serif);
+  font-style:italic;
+  font-size:13.5px;
+  line-height:1.8;
+  color:var(--ink-faint);
+}
+.dant-copy .en-note{ color:rgba(242,235,221,.58); }
 
 .hero-actions{ display:flex; flex-wrap:wrap; gap:14px; margin-top:34px; align-items:center; }
 .btn{
@@ -829,7 +848,7 @@ section[id]{ scroll-margin-top:80px; }
       <a href="#realtime">实时防护</a>
       <a href="#privacy">离线承诺</a>
     </nav>
-    <span class="build-tag">早期测试版</span>
+    <span class="build-tag">早期测试版 · Early Access</span>
   </div>
 </header>
 
@@ -850,6 +869,11 @@ section[id]{ scroll-margin-top:80px; }
         一套<strong>完全离线</strong>的终端安全方案。判定全部在本机完成——
         不联网、不上传、不收集任何信息。多种分析引擎在同一份文件上并行工作，
         以证据门控压住误报，再把结论交给实时防护执行。
+      </p>
+      <p class="hero-lead-en reveal d3">
+        Fully offline endpoint security. Every verdict is produced on your machine —
+        no network, no uploads, no telemetry. Five analysis layers examine the same file,
+        and evidence gating suppresses false positives before real-time protection acts.
       </p>
       <div class="hero-actions reveal d4">
         <a class="btn" href="https://github.com/luorlinying/PSLS/releases" target="_blank" rel="noopener"><span class="dot" aria-hidden="true"></span>下载安装包</a>
@@ -950,6 +974,7 @@ section[id]{ scroll-margin-top:80px; }
       <p class="sec-note reveal d2">
         不做单点判断。结构、规则、模型、相似度与签名各自给出证据，
         强证据直接保留，弱证据需要互相印证——结论因此更稳，误报因此更少。
+        <span class="en-note">No single-layer verdicts. Structure, rules, models, similarity and signatures each contribute evidence; a weak signal must be corroborated before a file is flagged.</span>
       </p>
     </div>
 
@@ -998,6 +1023,7 @@ section[id]{ scroll-margin-top:80px; }
         与自制杀毒软件行业领先者 <strong>PYAS</strong> 共同研发。
         特征工程、成员融合与证据门控在同一套判定链上打磨，
         模型常驻本地，推理不依赖任何云端服务。
+        <span class="en-note">Co-developed with PYAS, an industry-leading in-house antivirus. Feature engineering, member fusion and evidence gating are tuned on one verdict chain — the model stays local and never calls the cloud.</span>
       </p>
       <div class="dant-partner reveal d3">
         Co-developed with <b>PYAS</b> · Offline inference only
@@ -1009,14 +1035,14 @@ section[id]{ scroll-margin-top:80px; }
         <div class="value">&gt;80<small>%</small></div>
         <div>
           <div class="label">Detection rate</div>
-          <div class="sub">在内测样本集上的整体检出率</div>
+          <div class="sub">在内测样本集上的整体检出率 · measured on an internal test corpus</div>
         </div>
       </div>
       <div class="dant-stat reveal d1">
         <div class="value">&lt;1<small>%</small></div>
         <div>
           <div class="label">False positive rate</div>
-          <div class="sub">以正常软件样本集衡量的误报率</div>
+          <div class="sub">以正常软件样本集衡量的误报率 · measured against a benign-software corpus</div>
         </div>
       </div>
       <div class="dant-bars reveal d2" aria-hidden="true">
@@ -1038,6 +1064,7 @@ section[id]{ scroll-margin-top:80px; }
       <p class="sec-note reveal d2">
         监控下载、桌面、文档与启动项。文件写入完成的那一刻，判定链已经在运行；
         命中即阻断或隔离，无检出则放行并留下防复现记录。
+        <span class="en-note">Downloads, desktop, documents and startup entries are watched. The verdict chain starts the moment a write completes — block or quarantine on a hit, otherwise allow and record the decision to prevent re-scanning.</span>
       </p>
     </div>
 
@@ -1094,6 +1121,7 @@ section[id]{ scroll-margin-top:80px; }
         没有遥测，没有账号，没有云端查询。规则、模型、签名库随程序分发，
         所有判定都发生在你的机器上。断网也能完整工作——
         这正是它被称为"离线安全"的原因。
+        <span class="en-note">No telemetry, no accounts, no cloud lookups. Rules, models and signatures ship with the app, so every verdict stays on your machine — and it keeps working with the network unplugged.</span>
       </p>
     </div>
     <ul class="privacy-list reveal d2">
@@ -1116,7 +1144,7 @@ section[id]{ scroll-margin-top:80px; }
       </div>
       <div class="footer-meta">
         Early access · 2026<br>
-        Windows x64 · 早期测试版
+        Windows x64 · Early Access
       </div>
     </div>
     <div class="footer-bottom">

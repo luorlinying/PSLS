@@ -3,6 +3,11 @@
 Project Sertraline Lab Offline Security —— 一套完全离线的 Windows 终端安全软件。
 判定全部在本机完成：不联网、不上传、不收集任何信息。
 
+> **Project Sertraline Lab Offline Security** — a fully offline Windows endpoint
+> security suite. Every verdict is produced locally with multi-engine analysis
+> (PE parsing, YARA, fuzzy hashing, signature database) and real-time protection.
+> No telemetry, no uploads, no cloud lookups.
+
 > **开源构建说明**：本仓库不包含私有机器学习引擎 **Dantrolene V1**（模型权重、
 > 特征管线与推理实现）。ML 层为接口空实现，扫描由 PE 解析、YARA、模糊哈希与
 > 签名库完成。上游完整构建的内部指标（检出率 >80%、误报率 <1%）**不适用于**
